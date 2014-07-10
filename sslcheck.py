@@ -18,6 +18,9 @@ def main():
     context.check_hostname = True
     context.load_default_certs()
 
+    issue_count = 0
+    issue_pluralized = 'issues'
+
     for domain in settings.DOMAINS:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,17 +43,22 @@ def main():
                 warning_list.append(
                     {'domain': domain, 'msg': '%d days to expiration' % days}
                 )
+                issue_count += 1
             else:
                 success_list.append(
                     {'domain': domain, 'msg': '%d days to expiration' % days}
                 )
         except Exception as e:
             error_list.append({'domain': domain, 'msg': e})
+            issue_count += 1
         finally:
             ssl_sock.close()
 
+    if issue_count == 1:
+        issue_pluralized = 'issue'
+
     # Send Mail
-    msg = 'Subject: SSL Cert Check\n\n'
+    msg = 'Subject: SSL Cert Check - %d %s\n\n' % (issue_count, issue_pluralized)
     msg += 'Error\n=======\n'
     for error in error_list:
         msg += '%s: %s\n' % (error.get('domain'), error.get('msg'))
